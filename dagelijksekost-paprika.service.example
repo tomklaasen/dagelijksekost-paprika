@@ -1,0 +1,15 @@
+[Unit]
+Description=Dagelijkse Kost → Paprika HTTP trigger
+After=network.target
+
+[Service]
+Type=simple
+User=your-username
+WorkingDirectory=/path/to/dagelijksekost-paprika
+ExecStart=/usr/bin/python3 /path/to/dagelijksekost-paprika/server.py
+Restart=on-failure
+RestartSec=5
+Environment=PATH=/home/your-username/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=multi-user.target
