@@ -5,6 +5,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import logging
 import os
 import sys
 import uuid
@@ -17,6 +18,8 @@ from recipe_scrapers import scrape_html
 
 DAGELIJKSEKOST_URL = "https://dagelijksekost.vrt.be"
 PAPRIKA_API = "https://www.paprikaapp.com/api"
+
+log = logging.getLogger(__name__)
 
 
 def get_todays_recipe_url() -> str:
@@ -86,7 +89,8 @@ def fetch_photo(image_url: str | None) -> tuple[dict, bytes | None]:
         filename = f"{uuid.uuid4()}.jpg"
         photo_hash = hashlib.sha256(data).hexdigest()
         return {"photo": filename, "photo_hash": photo_hash, "photo_large": None}, data
-    except Exception:
+    except Exception as e:
+        log.warning("Failed to fetch photo from %s: %s", image_url, e)
         return {"photo": None, "photo_hash": None, "photo_large": None}, None
 
 

@@ -6,11 +6,12 @@ import logging
 import subprocess
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from pathlib import Path
 
 HOST = "0.0.0.0"
 PORT = 5050
-SCRIPT_DIR = "/mnt/usb/dagelijksekost-paprika"
-COMMAND = ["/home/tomklaasen/.local/bin/uv", "run", "import_recipe.py"]
+SCRIPT_DIR = Path(__file__).parent.resolve()
+COMMAND = ["uv", "run", "import_recipe.py"]
 
 logging.basicConfig(
     level=logging.INFO,
