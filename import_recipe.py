@@ -121,7 +121,7 @@ def scrape_recipe(url: str) -> tuple[dict, bytes | None]:
     photo_fields, photo_bytes = fetch_photo(safe(scraper.image, None))
 
     recipe = {
-        "uid": str(uuid.uuid4()),
+        "uid": str(uuid.uuid5(uuid.NAMESPACE_URL, url)),
         "name": name,
         "ingredients": "\n".join(safe(scraper.ingredients, [])),
         "directions": safe(scraper.instructions, ""),
