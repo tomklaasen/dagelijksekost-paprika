@@ -1,66 +1,57 @@
 #!/usr/bin/env python3
-"""Tests for the directions extraction in import_recipe.py.
+"""Tests for the directions fallback policy in import_recipe.py.
+
+Parsing a real page is covered by the dagelijksekost-scraper package; these tests only pin down
+which source this script prefers.
 
 Run with: uv run python -m unittest discover tests
 """
 
+import json
 import sys
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from recipe_scrapers import scrape_html
+from import_recipe import scrape_directions
 
-from import_recipe import dagelijksekost_directions, scrape_directions
-
-FIXTURE_URL = "https://dagelijksekost.vrt.be/gerechten/veggie-okonomiyaki"
-FIXTURE_HTML = (Path(__file__).parent / "fixtures" / "dagelijksekost_veggie_okonomiyaki.html").read_text(encoding="utf-8")
-# Same page with the RSC payload made unreachable, to exercise the fallback.
-FIXTURE_WITHOUT_PAYLOAD = FIXTURE_HTML.replace("self.__next_f.push", "self.__removed.push")
-
-FIRST_STEP = "Laat de gedroogde paddenstoelen en de kombu minstens een uur weken in koud water."
-LAST_STEP  = "Werk af met streepjes okonomiyakisaus en kewpie mayonaise."
+_payload = json.dumps({"recipeParts": [{"title": None, "instructions": [
+    {"part": 1, "step": 1, "description": "Stap uit de payload.", "tip": None},
+]}]})
+PAGE_WITH_PAYLOAD    = f"<html><script>self.__next_f.push([1,{json.dumps(_payload)}])</script></html>"
+PAGE_WITHOUT_PAYLOAD = "<html><body>geen payload</body></html>"
 
 
-class DagelijkseKostDirectionsTest(unittest.TestCase):
-    def test_extracts_every_step_from_the_rsc_payload(self):
-        steps = [s for s in dagelijksekost_directions(FIXTURE_HTML).split("\n") if not s.startswith("Tip: ")]
+class FakeScraper:
+    """Stands in for a recipe_scrapers scraper, which can only be built from a full page."""
 
-        self.assertEqual(15, len(steps))
-        self.assertEqual(FIRST_STEP, steps[0])
-        self.assertEqual(LAST_STEP, steps[-1])
+    def __init__(self, instructions="Stap van de scraper."):
+        self._instructions = instructions
 
-    def test_keeps_the_tip_that_belongs_to_a_step(self):
-        lines = dagelijksekost_directions(FIXTURE_HTML).split("\n")
-
-        self.assertIn("Tip: Of laat een scheut olie heet worden in een anti-kleefpan, schep het beslag in de pan, "
-                      "laat de onderkant zacht bakken, draai de pannenkoek om en bak ze nog even op de andere kant.",
-                      lines)
-
-    def test_returns_none_when_the_page_has_no_rsc_payload(self):
-        self.assertIsNone(dagelijksekost_directions(FIXTURE_WITHOUT_PAYLOAD))
+    def instructions(self):
+        if self._instructions is None:
+            raise ValueError("no instructions in this page")
+        return self._instructions
 
 
 class ScrapeDirectionsTest(unittest.TestCase):
-    def setUp(self):
-        self.scraper = scrape_html(FIXTURE_HTML, org_url=FIXTURE_URL)
+    def test_prefers_the_payload_over_the_json_ld_steps(self):
+        directions = scrape_directions(FakeScraper(), PAGE_WITH_PAYLOAD)
 
-    def test_json_ld_alone_is_incomplete(self):
-        """Guards the premise of the fix: without it we only get the truncated JSON-LD steps."""
-        self.assertEqual(2, len(self.scraper.instructions().split("\n")))
+        self.assertEqual("Stap uit de payload.", directions)
 
-    def test_prefers_the_full_payload_over_the_json_ld(self):
-        directions = scrape_directions(self.scraper, FIXTURE_HTML)
-
-        self.assertEqual(FIRST_STEP, directions.split("\n")[0])
-        self.assertIn(LAST_STEP, directions.split("\n"))
-
-    def test_falls_back_to_the_scraper_when_the_payload_is_missing(self):
+    def test_warns_and_falls_back_to_the_scraper_when_the_payload_is_missing(self):
         with self.assertLogs("import_recipe", level="WARNING"):
-            directions = scrape_directions(self.scraper, FIXTURE_WITHOUT_PAYLOAD)
+            directions = scrape_directions(FakeScraper(), PAGE_WITHOUT_PAYLOAD)
 
-        self.assertEqual(self.scraper.instructions(), directions)
+        self.assertEqual("Stap van de scraper.", directions)
+
+    def test_returns_an_empty_string_when_the_scraper_fails(self):
+        with self.assertLogs("import_recipe", level="WARNING"):
+            directions = scrape_directions(FakeScraper(instructions=None), PAGE_WITHOUT_PAYLOAD)
+
+        self.assertEqual("", directions)
 
 
 if __name__ == "__main__":

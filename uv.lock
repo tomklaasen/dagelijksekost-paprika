@@ -55,6 +55,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "beautifulsoup4" },
+    { name = "dagelijksekost-scraper" },
     { name = "python-dotenv" },
     { name = "recipe-scrapers" },
     { name = "requests" },
@@ -63,10 +64,16 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
+    { name = "dagelijksekost-scraper", git = "https://github.com/tomklaasen/dagelijksekost-scraper.git" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "recipe-scrapers", specifier = ">=15.11.0" },
     { name = "requests", specifier = ">=2.32.5" },
 ]
+
+[[package]]
+name = "dagelijksekost-scraper"
+version = "0.1.0"
+source = { git = "https://github.com/tomklaasen/dagelijksekost-scraper.git#5ef09b3f7d441e0299e049800fc2c157ead5e236" }
 
 [[package]]
 name = "extruct"

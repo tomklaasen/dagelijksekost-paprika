@@ -31,18 +31,17 @@ Preview the recipe without importing:
 uv run import_recipe.py --dry-run
 ```
 
-The directions are read straight from the page's Next.js payload: the site's JSON-LD only lists the
-first two steps, and the fallback in recipe-scrapers still expects the site's older data format. Step
-tips are kept as a `Tip: ...` line. If that payload ever disappears, the script logs a warning and
-falls back to the JSON-LD steps.
+The directions come from [dagelijksekost-scraper](https://github.com/tomklaasen/dagelijksekost-scraper),
+which reads them from the page's Next.js payload: the site's JSON-LD only lists the first two steps, and
+the fallback in recipe-scrapers still expects the site's older data format. Step tips are kept as a
+`Tip: ...` line. If that payload ever disappears, the script logs a warning and falls back to the
+JSON-LD steps.
 
 ## Tests
 
 ```bash
 uv run python -m unittest discover tests
 ```
-
-They run against a saved copy of a recipe page in `tests/fixtures/`, so no network access is needed.
 
 ## Optional: HTTP trigger for mobile use
 
